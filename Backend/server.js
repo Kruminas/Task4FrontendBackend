@@ -140,6 +140,13 @@ app.post('/api/unblock', async (req, res) => {
   }
 });
 
+const path = require("path");
+
+app.use(express.static(path.join(__dirname, "../Frontend/build")));
+
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "../Frontend/build", "index.html"));
+});
 
 app.listen(port, () => {
   console.log("Server is running on port ${port}");
