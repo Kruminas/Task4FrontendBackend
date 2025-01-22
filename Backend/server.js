@@ -18,11 +18,17 @@ app.use(cors({
   credentials: true,
 }));
 
+const MongoStore = require('connect-mongo');
+
 app.use(
   session({
     secret: 'your-session-secret',
     resave: false,
     saveUninitialized: true,
+    store: MongoStore.create({
+      mongoUrl: process.env.MONGO_URI,
+      collectionName: 'sessions',
+    }),
     cookie: { secure: false },
   })
 );
