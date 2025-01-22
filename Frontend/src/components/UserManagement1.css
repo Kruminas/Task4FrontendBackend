@@ -1,0 +1,11 @@
+.table-dark td, .table-dark th {
+    border-left: none !important;
+    border-right: none !important;
+  }
+  
+  .table-dark td, .table-dark th {
+    border-bottom: 1px solid #444 !important;
+  }
+  body {
+    background-color: rgb(33 37 41)
+  }
