@@ -69,7 +69,7 @@ const Register = () => {
               required
             />
           </div>
-          <button type="submit" className="btn btn-primary btn-block" disabled={loading}>
+          <button type="submit" className="btn btn-primary btn-block mt-3" disabled={loading}>
             {loading ? 'Registering...' : 'Register'}
           </button>
           <div className="text-center mt-3">
