@@ -147,9 +147,6 @@ app.post('/api/unblock', async (req, res) => {
   }
 });
 
-const path = require("path");
-
-
 app.listen(port, () => {
   console.log("Server is running on port ${port}");
 });
