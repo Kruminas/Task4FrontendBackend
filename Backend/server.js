@@ -5,6 +5,7 @@ const cors = require("cors");
 const session = require("express-session");
 const dotenv = require("dotenv");
 const User = require("./models/user");
+const path = require('path');
 
 dotenv.config();
 
@@ -32,6 +33,12 @@ app.use(
     cookie: { secure: false },
   })
 );
+
+app.use(express.static(path.join(__dirname, 'build')));
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'build', 'index.html'));
+});
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB connected"))
@@ -142,11 +149,6 @@ app.post('/api/unblock', async (req, res) => {
 
 const path = require("path");
 
-app.use(express.static(path.join(__dirname, "../Frontend/build")));
-
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "../Frontend/build", "index.html"));
-});
 
 app.listen(port, () => {
   console.log("Server is running on port ${port}");
