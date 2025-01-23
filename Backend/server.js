@@ -1,5 +1,3 @@
-// server.js
-
 const express = require("express");
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
@@ -9,22 +7,16 @@ const dotenv = require("dotenv");
 const path = require("path");
 const MongoStore = require("connect-mongo");
 
-// Load environment variables (e.g. MONGO_URI)
 dotenv.config();
 
-// Import User model
 const User = require("./models/user");
 
-// Initialize Express
 const app = express();
 const port = process.env.PORT || 5000;
 
-// Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// CORS - for local dev, only allow http://localhost:3000.
-// If deploying with a React build in the same server, you may switch to a different origin or remove.
 app.use(
   cors({
     origin: "http://localhost:3000",
@@ -37,12 +29,12 @@ app.use(
   session({
     secret: "your-session-secret",
     resave: false,
-    saveUninitialized: false, // generally better to set this to false
+    saveUninitialized: false,
     store: MongoStore.create({
       mongoUrl: process.env.MONGO_URI,
       collectionName: "sessions",
     }),
-    cookie: { secure: false }, // for HTTPS in production, you'd set secure: true
+    cookie: { secure: false },
   })
 );
 
