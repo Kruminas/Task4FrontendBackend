@@ -19,7 +19,7 @@ function UserManagement() {
 
   const fetchUsers = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/api/users", {
+      const response = await axios.get("api/users", { // http://localhost:5000/
         withCredentials: true,
       });
       const sortedUsers = response.data.sort((a, b) => {
@@ -57,7 +57,7 @@ function UserManagement() {
     const userIdsArray = Array.from(selectedUsers);
 
     axios
-      .post("http://localhost:5000/api/block", { userIds: userIdsArray })
+      .post("api/block", { userIds: userIdsArray }) // http://localhost:5000
       .then((response) => {
         console.log("Block response:", response.data);
 
@@ -95,7 +95,7 @@ function UserManagement() {
     setIsUnblocking(true);
     const userIdsArray = Array.from(selectedUsers);
     axios
-      .post("http://localhost:5000/api/unblock", { userIds: userIdsArray })
+      .post("api/unblock", { userIds: userIdsArray }) // http://localhost:5000/
       .then((response) => {
         console.log("Unblock response:", response.data);
         setUsers(
@@ -123,7 +123,7 @@ function UserManagement() {
     try {
       const userIdsToDelete = Array.from(selectedUsers);
       await axios.post(
-        "http://localhost:5000/api/users/delete",
+        "api/users/delete", // http://localhost:5000/
         { userIds: userIdsToDelete },
         { withCredentials: true }
       );

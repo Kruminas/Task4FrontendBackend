@@ -37,7 +37,7 @@ const UserTable = () => {
   };
 
   const handleBlock = () => {
-    axios.post('http://localhost:5000/api/block', { userIds: selectedUsers })
+    axios.post('api/block', { userIds: selectedUsers }) // http://localhost:5000/
       .then(() => {
         setUsers(users.map(user => 
           selectedUsers.includes(user._id) 
@@ -52,7 +52,7 @@ const UserTable = () => {
   };
   
   const handleUnblock = () => {
-    axios.post('http://localhost:5000/api/unblock', { userIds: selectedUsers })
+    axios.post('api/unblock', { userIds: selectedUsers }) // http://localhost:5000/
       .then(() => {
         setUsers(users.map(user => 
           selectedUsers.includes(user._id) 
@@ -67,7 +67,7 @@ const UserTable = () => {
   };
 
   const handleDelete = () => {
-    axios.post('http://localhost:5000/api/users/delete', { userIds: selectedUsers })
+    axios.post('api/users/delete', { userIds: selectedUsers }) // http://localhost:5000/
       .then(() => {
         setUsers(users.filter(user => !selectedUsers.includes(user._id)));
         setSelectedUsers([]);
