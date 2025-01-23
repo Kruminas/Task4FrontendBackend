@@ -1,94 +1,100 @@
+// server.js
+
 const express = require("express");
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const cors = require("cors");
 const session = require("express-session");
 const dotenv = require("dotenv");
-const User = require("./models/user");
-const path = require('path');
+const path = require("path");
+const MongoStore = require("connect-mongo");
 
+// Load environment variables (e.g. MONGO_URI)
 dotenv.config();
 
+// Import User model
+const User = require("./models/user");
+
+// Initialize Express
 const app = express();
 const port = process.env.PORT || 5000;
 
-
+// Middleware
 app.use(express.json());
-app.use(cors({
-  origin: 'http://localhost:3000',
-  credentials: true,
-}));
+app.use(express.urlencoded({ extended: true }));
 
-const MongoStore = require('connect-mongo');
-
+// CORS - for local dev, only allow http://localhost:3000.
+// If deploying with a React build in the same server, you may switch to a different origin or remove.
 app.use(
-  session({
-    secret: 'your-session-secret',
-    resave: false,
-    saveUninitialized: true,
-    store: MongoStore.create({
-      mongoUrl: process.env.MONGO_URI,
-      collectionName: 'sessions',
-    }),
-    cookie: { secure: false },
+  cors({
+    origin: "http://localhost:3000",
+    credentials: true,
   })
 );
 
-app.use(express.static(path.join(__dirname, 'build')));
+// Session setup
+app.use(
+  session({
+    secret: "your-session-secret",
+    resave: false,
+    saveUninitialized: false, // generally better to set this to false
+    store: MongoStore.create({
+      mongoUrl: process.env.MONGO_URI,
+      collectionName: "sessions",
+    }),
+    cookie: { secure: false }, // for HTTPS in production, you'd set secure: true
+  })
+);
 
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'build', 'index.html'));
-});
-
-mongoose.connect(process.env.MONGO_URI)
+// ======= CONNECT TO MONGO =======
+mongoose
+  .connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB connected"))
   .catch((err) => console.error("MongoDB connection error:", err));
 
+// ================================
+//           API ROUTES
+// ================================
+
+// Register
 app.post("/api/register", async (req, res) => {
-  const { name, email, password } = req.body;
   try {
+    const { name, email, password } = req.body;
     const user = new User({ name, email, password });
     await user.save();
-    res.status(201).json({ message: "User registered successfully" });
+    return res.status(201).json({ message: "User registered successfully" });
   } catch (error) {
-    res.status(500).json({ message: "Error registering user", error });
+    return res.status(500).json({ message: "Error registering user", error });
   }
 });
 
-// Login Route - Handles session
+// Login
 app.post("/api/login", async (req, res) => {
-  const { email, password } = req.body;
-
   try {
+    const { email, password } = req.body;
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(401).json({ message: "Invalid email or password" });
     }
-
-    // Check if user is blocked
     if (user.blocked) {
       return res.status(403).json({ message: "Your account is blocked" });
     }
-
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid email or password" });
     }
-
-    // Update lastLogin field
-    user.lastLogin = new Date();  // Set last login time
+    // Update lastLogin
+    user.lastLogin = new Date();
     await user.save();
 
-    req.session.userId = user._id; // Store user ID in session
-    res.status(200).json({ message: "Login successful", userId: user._id });
+    req.session.userId = user._id; // store user ID in session
+    return res.status(200).json({ message: "Login successful", userId: user._id });
   } catch (error) {
-    res.status(500).json({ message: "Server error during login" });
+    return res.status(500).json({ message: "Server error during login" });
   }
 });
 
-
-
-
+// Middleware to check session for protected routes
 const checkSession = (req, res, next) => {
   if (!req.session.userId) {
     return res.status(403).json({ message: "You must be logged in" });
@@ -96,57 +102,81 @@ const checkSession = (req, res, next) => {
   next();
 };
 
+// Get all users (requires login)
 app.get("/api/users", checkSession, async (req, res) => {
   try {
     const users = await User.find();
-    res.json(users);
+    return res.json(users);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    return res.status(500).json({ message: err.message });
   }
 });
 
+// Logout
 app.post("/api/logout", (req, res) => {
   req.session.destroy(() => {
     res.status(200).json({ message: "Logged out successfully" });
   });
 });
 
-app.post('/api/users/delete', async (req, res) => {
+// Delete users
+app.post("/api/users/delete", async (req, res) => {
   try {
     const { userIds } = req.body;
     if (!userIds || userIds.length === 0) {
-      return res.status(400).json({ message: 'No users selected' });
+      return res.status(400).json({ message: "No users selected" });
     }
-
     await User.deleteMany({ _id: { $in: userIds } });
-    res.status(200).json({ message: 'Users deleted successfully' });
+    return res.status(200).json({ message: "Users deleted successfully" });
   } catch (error) {
-    res.status(500).json({ message: 'Error deleting users' });
+    return res.status(500).json({ message: "Error deleting users" });
   }
 });
 
-app.post('/api/block', async (req, res) => {
-  const { userIds } = req.body;
-  console.log("User IDs to block:", userIds);
+// Block users
+app.post("/api/block", async (req, res) => {
   try {
+    const { userIds } = req.body;
+    if (!userIds || userIds.length === 0) {
+      return res.status(400).json({ message: "No users selected" });
+    }
     await User.updateMany({ _id: { $in: userIds } }, { blocked: true });
-    res.status(200).json({ message: 'Users blocked successfully' });
+    return res.status(200).json({ message: "Users blocked successfully" });
   } catch (error) {
     console.error("Error blocking users:", error);
-    res.status(500).json({ message: 'Error blocking users' });
+    return res.status(500).json({ message: "Error blocking users" });
   }
 });
 
-app.post('/api/unblock', async (req, res) => {
-  const { userIds } = req.body;
+// Unblock users
+app.post("/api/unblock", async (req, res) => {
   try {
+    const { userIds } = req.body;
+    if (!userIds || userIds.length === 0) {
+      return res.status(400).json({ message: "No users selected" });
+    }
     await User.updateMany({ _id: { $in: userIds } }, { blocked: false });
-    res.status(200).json({ message: 'Users unblocked successfully' });
+    return res.status(200).json({ message: "Users unblocked successfully" });
   } catch (error) {
-    res.status(500).json({ message: 'Error unblocking users' });
+    return res.status(500).json({ message: "Error unblocking users" });
   }
 });
 
+// ================================
+//         SERVE REACT BUILD
+// ================================
+
+// 1) Serve static files from the React build folder
+app.use(express.static(path.join(__dirname, "build")));
+
+// 2) Catch-all route: send back React's index.html for any non-API route
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "build", "index.html"));
+});
+
+// ================================
+//       START THE SERVER
+// ================================
 app.listen(port, () => {
-  console.log("Server is running on port ${port}");
+  console.log(`Server is running on port ${port}`);
 });
